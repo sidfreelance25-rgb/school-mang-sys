@@ -46,7 +46,12 @@ class DashboardController extends Controller
                 'homeworks' => Homework::query()->where('teacher_id', $user->id)->latest()->limit(5)->get(),
             ],
             UserRole::Student => [
-                'student' => $user->student()?->load(['schoolClass', 'section', 'feeInvoices', 'attendances' => fn ($q) => $q->latest('date')->limit(10)]),
+                'student' => $user->student?->load([
+                    'schoolClass',
+                    'section',
+                    'feeInvoices',
+                    'attendances' => fn ($q) => $q->latest('date')->limit(10),
+                ]),
                 'homeworks' => $user->student
                     ? Homework::query()
                         ->where('school_class_id', $user->student->school_class_id)

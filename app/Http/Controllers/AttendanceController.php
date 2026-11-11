@@ -65,19 +65,26 @@ class AttendanceController extends Controller
 
         DB::transaction(function () use ($data, $request): void {
             foreach ($data['attendance'] as $studentId => $row) {
-                StudentAttendance::query()->updateOrCreate(
-                    [
-                        'student_id' => $studentId,
-                        'date' => $data['date'],
-                    ],
-                    [
-                        'school_class_id' => $data['school_class_id'],
-                        'section_id' => $data['section_id'],
-                        'status' => $row['status'],
-                        'remarks' => $row['remarks'] ?? null,
-                        'marked_by' => $request->user()->id,
-                    ]
-                );
+                $attendance = StudentAttendance::query()
+                    ->where('student_id', $studentId)
+                    ->whereDate('date', $data['date'])
+                    ->first();
+
+                $payload = [
+                    'student_id' => $studentId,
+                    'school_class_id' => $data['school_class_id'],
+                    'section_id' => $data['section_id'],
+                    'date' => $data['date'],
+                    'status' => $row['status'],
+                    'remarks' => $row['remarks'] ?? null,
+                    'marked_by' => $request->user()->id,
+                ];
+
+                if ($attendance) {
+                    $attendance->update($payload);
+                } else {
+                    StudentAttendance::query()->create($payload);
+                }
             }
         });
 
@@ -106,17 +113,24 @@ class AttendanceController extends Controller
         ]);
 
         foreach ($data['attendance'] as $teacherId => $row) {
-            TeacherAttendance::query()->updateOrCreate(
-                [
-                    'teacher_id' => $teacherId,
-                    'date' => $data['date'],
-                ],
-                [
-                    'status' => $row['status'],
-                    'remarks' => $row['remarks'] ?? null,
-                    'marked_by' => $request->user()->id,
-                ]
-            );
+            $attendance = TeacherAttendance::query()
+                ->where('teacher_id', $teacherId)
+                ->whereDate('date', $data['date'])
+                ->first();
+
+            $payload = [
+                'teacher_id' => $teacherId,
+                'date' => $data['date'],
+                'status' => $row['status'],
+                'remarks' => $row['remarks'] ?? null,
+                'marked_by' => $request->user()->id,
+            ];
+
+            if ($attendance) {
+                $attendance->update($payload);
+            } else {
+                TeacherAttendance::query()->create($payload);
+            }
         }
 
         return back()->with('success', 'Teacher attendance saved.');
